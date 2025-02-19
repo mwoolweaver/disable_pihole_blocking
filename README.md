@@ -3,7 +3,7 @@ can be used as simple way to disable Pi-hole blocking ads
 
 save page locally and open in browser 
 
-after opening you fill in the form or fill in the example and add it to the end of the URL
+after opening you fill in the form or fill in the example and add it to the end of the URL as the page will parse values from URL is they are found
 
 ```
 ?passwd=<put-your-password-here>&domain=<domain-or-ip-to-pihole>&seconds=<number-seconds-to-disable>
