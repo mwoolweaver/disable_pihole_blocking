@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>POST Request Form</title>
+    </head>
+    <body>
+        <h1>Submit Values</h1>
+        <form id="postForm">
+            <label for="value1">Password:</label>
+            <input type="text" id="passwd" name="passwd" required />
+            <br />
+            <label for="value2">Domain/IP:</label>
+            <input type="text" id="domain" name="domain" required />
+            <br />
+            <label for="value2">Time in Seconds:</label>
+            <input type="text" id="seconds" name="seconds" required />
+            <br />
+            <button type="submit">Submit</button>
+        </form>
+
+        <script>
+
+            function loadFormValuesFromUrl() {
+              const queryString = window.location.search;
+              const urlParams = new URLSearchParams(queryString);
+
+              for (const [key, value] of urlParams.entries()) {
+                const inputField = document.querySelector(`[name="${key}"]`);
+
+                if (inputField) {
+                  inputField.value = value;
+                }
+              }
+            }
+
+            // Call the function when the page loads
+            window.addEventListener('load', loadFormValuesFromUrl);
+
+            document.getElementById('postForm').addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                const pwd = document.getElementById('passwd').value;
+                const auth_url = "https://" + document.getElementById('domain').value + "/api/auth";
+                const block_url = "https://" + document.getElementById('domain').value + "/api/dns/blocking";
+                const time_seconds = parseInt(document.getElementById('seconds').value);
+
+
+                const auth_data = {
+                    password: pwd
+                };
+
+                const block_data = {
+                    blocking: false,
+                    timer: time_seconds
+                };
+
+                const auth_response = await fetch(auth_url, {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json',
+                        'content-type': 'application/json',
+                    },
+                    body: JSON.stringify(auth_data)
+                });
+                if (auth_response.ok) {
+                    alert('Values submitted successfully!');
+                }
+
+                const auth_response_data = await auth_response.json();
+
+                let message = JSON.stringify(auth_response_data.session.valid);
+                let session_id = JSON.stringify(auth_response_data.session.sid).replace(/['"]+/g, '');
+
+                document.getElementById("auth_results").innerHTML = message;
+                document.getElementById("session_id").innerHTML = session_id;
+
+                const block_url_response = await fetch(block_url, {
+                    method: 'POST',
+                    headers: {
+                        'Access-Control-Allow-Origin': '*',
+                        'accept': 'application/json',
+                        'content-type': 'application/json',
+                        'sid': session_id
+                    },
+                    body: JSON.stringify(block_data)
+                });
+
+                if (block_url_response.ok) {
+                    alert('Values submitted successfully!');
+                }
+
+                const block_url_response_data = await block_url_response.json();
+
+                document.getElementById("session_text").innerHTML = JSON.stringify(block_url_response_data);
+
+                session_id_url = encodeURIComponent(session_id)
+
+                const delete_session_url = "https://" + document.getElementById('domain').value + "/api/auth";
+
+                document.getElementById("delete_url").innerHTML = delete_session_url;
+
+                const delete_session_response = fetch(delete_session_url, {
+                    method: 'DELETE',
+                    headers: {
+                        'content-type': 'application/json',
+                        'sid': session_id
+                    },
+                    body: JSON.stringify(0)
+                }).then(response => {
+                    console.log(response.statusText); // Logs the HTTP status code
+                    if (!response.ok) {
+                        document.getElementById("delete_status").innerHTML = "in IF";
+                    }
+                    else{
+                        document.getElementById("delete_status").innerHTML = "in ELSE";
+                    }
+                    return response.text(); // or response.json() if the response has a body
+                });
+
+            });
+        </script>
+        <h1>Login Status: <span id="auth_results"></span></h1>
+        <h1>Session ID: <span id="session_id"></span></h1>
+        <h1>Block Status: <span id="session_text"></span></h1>
+        <h1>DELETE URL: <span id="delete_url"></span></h1>
+        <h1>DELETE Status: <span id="delete_status"></span></h1>
+    </body>
+</html>
